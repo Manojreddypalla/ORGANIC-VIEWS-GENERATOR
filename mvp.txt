@@ -1,0 +1,615 @@
+# Proxy-Based Multi-Session Windows QA Sandbox — MVP Specification
+
+## 1. Objective
+
+Build a Windows desktop application for testing a supplied URL using multiple isolated Chromium browser sessions simultaneously.
+
+The initial target is **6 concurrent sessions**, with the architecture allowing the number of sessions to be increased later.
+
+The application is intended as a QA/testing sandbox for content owned or controlled by the tester.
+
+---
+
+## 2. Core Requirements
+
+### Windows Application
+
+* Native Windows desktop application.
+* C# / .NET 8.
+* WPF user interface.
+* Simple configuration-driven architecture.
+
+### URL Input
+
+The user enters a target URL.
+
+Example:
+
+```text
+https://example.com/test-video
+```
+
+The application launches the configured browser sessions against that URL.
+
+### Concurrent Sessions
+
+Initial configuration:
+
+```text
+6 concurrent browser sessions
+```
+
+Each session should operate independently.
+
+Example:
+
+```text
+Session 1 → Chromium → Proxy 1
+Session 2 → Chromium → Proxy 2
+Session 3 → Chromium → Proxy 3
+Session 4 → Chromium → Proxy 4
+Session 5 → Chromium → Proxy 5
+Session 6 → Chromium → Proxy 6
+```
+
+Each session should have isolated browser state, including cookies and local storage.
+
+---
+
+# 3. Proxy Manager
+
+The application should contain a dedicated proxy-management subsystem.
+
+## Provider Configuration
+
+The user can configure proxy-provider/API URLs.
+
+Example:
+
+```json
+{
+  "ProviderUrls": [
+    "https://authorized-provider.example/api/proxies",
+    "https://another-authorized-provider.example/proxies"
+  ]
+}
+```
+
+The system should periodically retrieve proxies from the configured providers.
+
+The provider layer should be abstracted so different response formats can be supported later.
+
+---
+
+## Proxy Normalization
+
+Support common formats such as:
+
+```text
+1.2.3.4:8080
+http://1.2.3.4:8080
+https://1.2.3.4:3128
+http://username:password@1.2.3.4:8080
+```
+
+Provider-specific parsers should convert these into a common internal representation.
+
+Example:
+
+```text
+Proxy
+├── Host
+├── Port
+├── Scheme
+├── Username
+├── Password
+├── Provider
+├── LastChecked
+├── Latency
+└── HealthStatus
+```
+
+---
+
+# 4. Proxy Health Checker
+
+Before assigning a proxy to a browser session, the application should test whether it is usable.
+
+The health checker should record:
+
+* Connection success/failure.
+* Response time.
+* Timeout.
+* Last successful check.
+* Last failure.
+* Number of consecutive failures.
+
+Example statuses:
+
+```text
+Healthy
+Checking
+Slow
+Failed
+Disabled
+```
+
+Failed proxies should be removed from the active pool or temporarily disabled.
+
+---
+
+# 5. Proxy Assignment
+
+The proxy manager maintains a pool of healthy proxies.
+
+For six sessions, it attempts to assign six different healthy proxies:
+
+```text
+Session 1 → Proxy A
+Session 2 → Proxy B
+Session 3 → Proxy C
+Session 4 → Proxy D
+Session 5 → Proxy E
+Session 6 → Proxy F
+```
+
+If a proxy fails, the session should obtain another healthy proxy where possible.
+
+---
+
+# 6. Automatic Rotation
+
+Every session should support automatic proxy rotation.
+
+Default configuration:
+
+```text
+Base interval: 5 minutes
+Random jitter: 0–30 seconds
+```
+
+Therefore, a rotation occurs approximately:
+
+```text
+5 minutes + random delay
+```
+
+Example:
+
+```text
+Session 1 → 5m 08s
+Session 2 → 5m 21s
+Session 3 → 5m 03s
+Session 4 → 5m 27s
+Session 5 → 5m 14s
+Session 6 → 5m 01s
+```
+
+The jitter should be independently generated per session.
+
+---
+
+# 7. Rotation Process
+
+When rotation occurs:
+
+1. Select a healthy replacement proxy.
+2. Verify the proxy.
+3. Stop/reconfigure the affected browser session as required.
+4. Start the session using the new proxy.
+5. Navigate back to the target URL.
+6. Record the rotation in the logs.
+7. Schedule the next rotation.
+
+If the selected proxy fails validation, another proxy should be selected.
+
+---
+
+# 8. Failed Proxy Handling
+
+If a currently assigned proxy stops working:
+
+```text
+Current proxy
+     ↓
+Health check fails
+     ↓
+Mark proxy unhealthy
+     ↓
+Select replacement
+     ↓
+Validate replacement
+     ↓
+Assign replacement
+     ↓
+Continue test
+```
+
+The application should avoid repeatedly assigning the same failed proxy.
+
+---
+
+# 9. Browser Engine
+
+Use:
+
+```text
+C#
+.NET 8
+WPF
+Microsoft Playwright
+Chromium
+```
+
+Each browser session should be isolated.
+
+The application should maintain separate browser contexts/profiles where appropriate.
+
+---
+
+# 10. Session Manager
+
+The Session Manager controls all browser sessions.
+
+Each session should have a state similar to:
+
+```text
+Starting
+Running
+Rotating
+Checking Proxy
+Waiting
+Failed
+Stopped
+```
+
+Example:
+
+```text
+Session 1
+Status: Running
+Proxy: 192.0.2.10:8080
+Latency: 142 ms
+Next rotation: 03:42
+
+Session 2
+Status: Rotating
+Proxy: 192.0.2.11:3128
+
+Session 3
+Status: Running
+Proxy: 192.0.2.12:8080
+```
+
+---
+
+# 11. Windows UI
+
+The main window should contain:
+
+## Configuration
+
+```text
+Target URL:
+[____________________________________________]
+
+Sessions:
+[ 6 ]
+
+Rotation interval:
+[ 5 minutes ]
+
+Random delay:
+[ 0–30 seconds ]
+```
+
+## Provider Configuration
+
+```text
+Proxy Providers
+
+[https://provider.example/api/proxies]
+
+[Add Provider]
+[Remove Provider]
+[Test Provider]
+```
+
+## Controls
+
+```text
+[ Start ]
+[ Stop ]
+[ Pause ]
+[ Refresh Proxies ]
+```
+
+## Session Table
+
+Columns:
+
+```text
+Session
+Status
+Proxy
+Provider
+Latency
+Started
+Next Rotation
+Errors
+```
+
+---
+
+# 12. Logging
+
+Screenshots are not required.
+
+The application should maintain structured logs.
+
+Example:
+
+```text
+[INFO] Application started
+[INFO] Target URL configured
+[INFO] Fetching proxies from provider
+[INFO] Provider returned 57 proxies
+[INFO] Proxy health check started
+[INFO] 42 proxies passed health check
+[INFO] Session 1 started
+[INFO] Session 1 assigned proxy 192.0.2.10:8080
+[INFO] Session 2 started
+[INFO] Session 2 assigned proxy 192.0.2.11:3128
+[WARN] Proxy 192.0.2.15:8080 failed health check
+[INFO] Session 3 proxy rotation started
+[INFO] Session 3 switched to proxy 192.0.2.21:8080
+```
+
+Logs should contain timestamps and session identifiers.
+
+---
+
+# 13. Log Storage
+
+Store logs under:
+
+```text
+logs/
+```
+
+Recommended format:
+
+```text
+logs/
+├── application-2026-10-02.jsonl
+├── application-2026-10-03.jsonl
+└── ...
+```
+
+JSONL allows individual events to be processed easily.
+
+Example:
+
+```json
+{
+  "timestamp": "2026-10-02T20:15:32+05:30",
+  "level": "INFO",
+  "session": 3,
+  "event": "ProxyRotated",
+  "oldProxy": "proxy-a",
+  "newProxy": "proxy-b"
+}
+```
+
+---
+
+# 14. Configuration
+
+Configuration should be stored in:
+
+```text
+config/config.json
+```
+
+Example:
+
+```json
+{
+  "SessionCount": 6,
+  "RotationMinutes": 5,
+  "RotationJitterSeconds": 30,
+  "ProxyHealthTimeoutSeconds": 10,
+  "ProviderRefreshMinutes": 5,
+  "ProviderUrls": [],
+  "Headless": false
+}
+```
+
+The application should load this configuration on startup.
+
+---
+
+# 15. Proxy Provider Abstraction
+
+Use an interface so additional providers can be added without modifying the Session Manager.
+
+Conceptually:
+
+```text
+IProxyProvider
+    ↓
+Provider A
+Provider B
+Provider C
+...
+```
+
+Each provider should implement:
+
+```text
+FetchProxies()
+```
+
+The Proxy Manager then combines results into a single pool.
+
+---
+
+# 16. Scalability
+
+The MVP starts with:
+
+```text
+6 sessions
+```
+
+but the architecture should not hard-code six everywhere.
+
+For example:
+
+```text
+SessionCount = 6
+```
+
+can later become:
+
+```text
+SessionCount = 10
+SessionCount = 20
+SessionCount = 50
+```
+
+subject to available CPU, RAM, network bandwidth, and proxy availability.
+
+---
+
+# 17. Error Handling
+
+The application should gracefully handle:
+
+* Invalid URL.
+* Provider unavailable.
+* Provider returns malformed data.
+* No healthy proxies available.
+* Proxy authentication failure.
+* Browser launch failure.
+* Navigation timeout.
+* Browser crash.
+* Proxy rotation failure.
+* Network interruption.
+
+Failures should be logged rather than crashing the entire application.
+
+A failure in Session 3 should not stop Sessions 1, 2, 4, 5, and 6.
+
+---
+
+# 18. MVP Project Structure
+
+Recommended structure:
+
+```text
+ProxySandboxMvp/
+│
+├── ProxySandboxMvp.csproj
+├── App.xaml
+├── App.xaml.cs
+├── MainWindow.xaml
+├── MainWindow.xaml.cs
+│
+├── Models/
+│   ├── Proxy.cs
+│   ├── ProxyProviderConfig.cs
+│   ├── SessionInfo.cs
+│   └── AppConfig.cs
+│
+├── Services/
+│   ├── ProxyManager.cs
+│   ├── ProxyHealthChecker.cs
+│   ├── ProxyRotationScheduler.cs
+│   ├── BrowserSessionManager.cs
+│   └── Logger.cs
+│
+├── Providers/
+│   ├── IProxyProvider.cs
+│   └── HttpProxyProvider.cs
+│
+├── config/
+│   └── config.json
+│
+└── logs/
+```
+
+---
+
+# 19. Explicitly Excluded
+
+The following are not part of the MVP:
+
+* Tor.
+* Screenshot capture.
+* Automated artificial view-count generation.
+* Mechanisms specifically intended to disguise automated traffic as independent organic viewers.
+* Traffic-detection evasion.
+
+The browser/proxy infrastructure is intended for authorized QA and network-testing purposes.
+
+---
+
+# 20. Final MVP Flow
+
+The complete workflow is:
+
+```text
+User launches application
+          ↓
+Enters target URL
+          ↓
+Configures authorized proxy providers
+          ↓
+Application fetches proxies
+          ↓
+Proxy pool created
+          ↓
+Health checks run
+          ↓
+Healthy proxies selected
+          ↓
+Six isolated Chromium sessions launch
+          ↓
+Each receives its own proxy
+          ↓
+Sessions navigate to target URL
+          ↓
+Activity/errors are logged
+          ↓
+5-minute timer starts
+          ↓
+Random jitter is applied
+          ↓
+Proxy rotation occurs
+          ↓
+New proxy is health checked
+          ↓
+Session receives replacement proxy
+          ↓
+Cycle continues
+          ↓
+User presses Stop
+          ↓
+All sessions shut down cleanly
+          ↓
+Logs remain available for analysis
+```
+
+## Technology Stack
+
+**Frontend/UI:** WPF
+**Language:** C#
+**Runtime:** .NET 8
+**Browser automation:** Playwright
+**Browser:** Chromium
+**Concurrency:** async/await + independent session tasks
+**Configuration:** JSON
+**Logging:** JSONL
+**Proxy management:** provider abstraction + health checker + rotation scheduler
+**Operating system:** Windows

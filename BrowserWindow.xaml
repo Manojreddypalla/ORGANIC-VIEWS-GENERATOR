@@ -1,0 +1,40 @@
+<Window x:Class="ProxySandboxMvp.BrowserWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Proxy Sandbox // Browser Matrix" Height="760" Width="1280" Background="#090B16" WindowStyle="None" ResizeMode="CanResize">
+    <Window.Resources>
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="#00F0FF"/>
+            <Setter Property="Background" Value="#111A35"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="#273052" BorderThickness="1,1,1,0" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header" TextElement.Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#173C59"/>
+                    <Setter Property="Foreground" Value="#00F0FF"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#241A45"/></Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="14">
+        <Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <DockPanel Margin="0,0,0,10">
+            <DockPanel Background="#0E1327" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Button DockPanel.Dock="Right" Content="×" Click="Close_Click" Background="#241A45" Foreground="#FF3CAC" Width="42" BorderThickness="0"/>
+                <Button DockPanel.Dock="Right" Content="_" Click="Hide_Click" Background="#151D39" Foreground="#00F0FF" Width="42" BorderThickness="0"/>
+                <TextBlock Text="BROWSER MATRIX" Foreground="#00F0FF" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                <TextBlock Text="  // AUDIO MUTED // BACKGROUND READY" Foreground="#FF3CAC" VerticalAlignment="Center" Margin="18,0,0,0"/>
+            </DockPanel>
+        </DockPanel>
+        <TabControl Grid.Row="1" x:Name="BrowserTabs" Background="#0F1221" BorderBrush="#273052" Foreground="#D9F9FF"/>
+    </Grid>
+</Window>

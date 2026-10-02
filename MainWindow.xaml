@@ -1,0 +1,70 @@
+<Window x:Class="ProxySandboxMvp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Proxy Sandbox" Height="820" Width="1280" Background="{StaticResource WindowBrush}">
+    <Grid Margin="28">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="180"/></Grid.RowDefinitions>
+        <DockPanel Grid.Row="0" Margin="0,0,0,24">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="Start" Click="Start_Click" Background="#0B7285"/>
+                <Button Content="Stop" Click="Stop_Click" Background="#C44536"/>
+                <Button Content="Refresh proxies" Click="Refresh_Click" Background="#52606D"/>
+                <Button Content="Import CSV" Click="ImportCsv_Click" Background="#52606D"/>
+                <Button Content="Export logs" Click="ExportLogs_Click" Background="#52606D"/>
+                <Button Content="Open browser matrix" Click="OpenBrowserMatrix_Click" Background="#241A45" Foreground="#00F0FF"/>
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="PROXY SANDBOX" FontSize="12" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                <TextBlock Text="Windows QA session console" FontSize="28" FontWeight="SemiBold" Margin="0,3,0,0"/>
+            </StackPanel>
+        </DockPanel>
+        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="18" Margin="0,0,0,18">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="150"/><ColumnDefinition Width="200"/></Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,20,0"><TextBlock Text="Target URL" Foreground="{StaticResource MutedBrush}"/><TextBox x:Name="TargetUrlBox" Text="https://example.com" Padding="8" Margin="0,5,0,0"/></StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,20,0"><TextBlock Text="Sessions" Foreground="{StaticResource MutedBrush}"/><TextBox x:Name="SessionCountBox" Text="6" Padding="8" Margin="0,5,0,0"/></StackPanel>
+                <StackPanel Grid.Column="2" Margin="0,0,20,0"><TextBlock Text="Rotation timeout (1-5 min)" Foreground="{StaticResource MutedBrush}"/><TextBox x:Name="RotationMinutesBox" Text="5" Padding="8" Margin="0,5,0,0"/></StackPanel>
+                <StackPanel Grid.Column="3"><TextBlock Text="Provider URLs" Foreground="{StaticResource MutedBrush}"/><TextBox x:Name="ProviderUrlBox" Padding="8" Margin="0,5,0,0" ToolTip="One URL per line"/></StackPanel>
+            </Grid>
+        </Border>
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <DockPanel Margin="0,0,0,10"><TextBlock Text="Sessions" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="PoolSummary" DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}"/><TextBlock x:Name="SessionSummary" DockPanel.Dock="Right" Foreground="{StaticResource AccentBrush}" Margin="0,0,24,0"/></DockPanel>
+            <DataGrid Grid.Row="1" x:Name="SessionsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}" HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Session" Binding="{Binding Id}" Width="70"/>
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="130"/>
+                    <DataGridTextColumn Header="Proxy" Binding="{Binding Proxy.DisplayEndpoint}" Width="170"/>
+                    <DataGridTextColumn Header="Provider" Binding="{Binding Proxy.Provider}" Width="*"/>
+                    <DataGridTextColumn Header="Latency" Binding="{Binding Proxy.Latency}" Width="110"/>
+                    <DataGridTextColumn Header="Started" Binding="{Binding Started, StringFormat=HH:mm:ss}" Width="110"/>
+                    <DataGridTextColumn Header="Next rotation" Binding="{Binding NextRotation, StringFormat=HH:mm:ss}" Width="130"/>
+                    <DataGridTextColumn Header="Successful views" Binding="{Binding SuccessfulViews}" Width="125"/>
+                    <DataGridTextColumn Header="Errors" Binding="{Binding Errors}" Width="70"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+        <Border Grid.Row="3" Background="#17202A" Padding="14" Margin="0,18,0,0">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Activity log" Foreground="#B9C5CC" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                <ListBox x:Name="LogList" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Text}" Margin="0,1">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#D9E1E7"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Level}" Value="WARN"><Setter Property="Foreground" Value="#F2C14E"/></DataTrigger>
+                                            <DataTrigger Binding="{Binding Level}" Value="ERROR"><Setter Property="Foreground" Value="#F08080"/></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

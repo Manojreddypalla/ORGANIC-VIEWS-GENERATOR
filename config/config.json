@@ -1,0 +1,9 @@
+{
+  "SessionCount": 6,
+  "RotationMinutes": 5,
+  "RotationJitterSeconds": 30,
+  "ProxyHealthTimeoutSeconds": 10,
+  "ProviderRefreshMinutes": 5,
+  "ProviderUrls": [],
+  "Headless": false
+}
